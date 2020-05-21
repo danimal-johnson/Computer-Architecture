@@ -11,6 +11,7 @@ SP = 7  # Stack Pointer
 LDI = 0b10000010  # 0x82
 PRN = 0b01000111  # 0x47
 HLT = 0b00000001  # 0x01
+MUL = 0b10100010  # 0xA2
 
 
 class CPU:
@@ -34,22 +35,16 @@ class CPU:
         """Load a program into memory."""
 
         address = 0
-
-        # For now, we've just hardcoded a program:
-
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
         print("Loading...")
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        with open("examples/mult.ls8") as f:
+            for line in f:
+                str_val = line.split("#")[0].strip()  # The line up to '#'
+                if str_val == '':  # In case there's no code on the line.
+                    continue
+                inst = int(str_val, 2)  # Convert line to binary number
+
+                self.ram[address] = inst
+                address += 1
         print("Done.")
 
     def ram_read(self, mar):
@@ -64,6 +59,8 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "SUB":
             self.reg[reg_a] -= self.reg[reg_b]
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -90,13 +87,10 @@ class CPU:
     def run(self):
         """Run the CPU."""
 
-        print("Running the CPU.")
-
         while not self.halted:
             ir = self.ram[self.PC]  # Instruction
             op1 = self.ram[self.PC + 1]    # Operand 1
             op2 = self.ram[self.PC + 2]    # Operand 2
-            print("Instruction = ", ir)
 
             if ir == HLT:
                 self.halted = True
@@ -107,8 +101,12 @@ class CPU:
                 self.PC += 3
 
             elif ir == PRN:
-                print("Output: ", self.reg[op1])
+                print(self.reg[op1])
                 self.PC += 2
+
+            elif ir == MUL:
+                self.alu("MUL", op1, op2)
+                self.PC += 3
 
             else:
                 print("Instruction ", ir, "not implemented. Halting.")
