@@ -31,12 +31,13 @@ class CPU:
         self.halted = False
         # self.load() # Already in ls8.py
 
-    def load(self):
+    def load(self, filename="examples/mult.ls8"):
         """Load a program into memory."""
 
         address = 0
         print("Loading...")
-        with open("examples/mult.ls8") as f:
+        # TODO: handle file open errors
+        with open(filename) as f:
             for line in f:
                 str_val = line.split("#")[0].strip()  # The line up to '#'
                 if str_val == '':  # In case there's no code on the line.
