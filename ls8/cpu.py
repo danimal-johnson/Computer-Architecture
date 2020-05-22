@@ -12,6 +12,8 @@ LDI = 0b10000010  # 0x82
 PRN = 0b01000111  # 0x47
 HLT = 0b00000001  # 0x01
 MUL = 0b10100010  # 0xA2
+PUSH = 0b01000101  # 0x45
+POP = 0b01000110  # 0x46
 
 
 class CPU:
@@ -19,7 +21,7 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        self.ram = [0] * 25  # Initialize RAM to zeroes
+        self.ram = [0] * 0xFF  # Initialize RAM to zeroes
         self.reg = [0] * 8  # Initialize all registers to zero
         self.reg[SP] = 0xF4  # Set Stack Pointer to memory address 0xF4
 
@@ -43,10 +45,9 @@ class CPU:
                 if str_val == '':  # In case there's no code on the line.
                     continue
                 inst = int(str_val, 2)  # Convert line to binary number
-
                 self.ram[address] = inst
                 address += 1
-        print("Done.")
+        print(address, "bytes. Done.")
 
     def ram_read(self, mar):
         return self.ram[mar]
@@ -108,6 +109,18 @@ class CPU:
             elif ir == MUL:
                 self.alu("MUL", op1, op2)
                 self.PC += 3
+
+            elif ir == PUSH:
+                # TODO: Check for overflow
+                self.reg[SP] -= 1
+                self.ram[self.reg[SP]] = self.reg[op1]
+                self.PC += 2
+
+            elif ir == POP:
+                # TODO: Check for underflow
+                self.reg[op1] = self.ram[self.reg[SP]]
+                self.reg[SP] += 1
+                self.PC += 2
 
             else:
                 print("Instruction ", ir, "not implemented. Halting.")
