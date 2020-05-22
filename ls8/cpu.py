@@ -11,9 +11,14 @@ SP = 7  # Stack Pointer
 LDI = 0b10000010  # 0x82
 PRN = 0b01000111  # 0x47
 HLT = 0b00000001  # 0x01
+ADD = 0b10100000  # 0xA0
+SUB = 0b10100001  # 0xA1
 MUL = 0b10100010  # 0xA2
+DIV = 0b10100011  # 0xA3
 PUSH = 0b01000101  # 0x45
 POP = 0b01000110  # 0x46
+CALL = 0b01010000  # 0x50
+RET = 0b00010001  # 0x11
 
 
 class CPU:
@@ -63,6 +68,8 @@ class CPU:
             self.reg[reg_a] -= self.reg[reg_b]
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+        elif op == "div":
+            self.reg[reg_a] /= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -106,8 +113,20 @@ class CPU:
                 print(self.reg[op1])
                 self.PC += 2
 
+            elif ir == ADD:
+                self.alu("ADD", op1, op2)
+                self.PC += 3
+
+            elif ir == SUB:
+                self.alu("SUB", op1, op2)
+                self.PC += 3
+
             elif ir == MUL:
                 self.alu("MUL", op1, op2)
+                self.PC += 3
+
+            elif ir == DIV:
+                self.alu("DIV", op1, op2)
                 self.PC += 3
 
             elif ir == PUSH:
@@ -121,6 +140,21 @@ class CPU:
                 self.reg[op1] = self.ram[self.reg[SP]]
                 self.reg[SP] += 1
                 self.PC += 2
+
+            elif ir == CALL:
+                # Push return address (PC+2) on stack
+                return_addr = self.PC + 2  # Call + Address = 2
+                self.reg[SP] -= 1
+                self.ram[self.reg[SP]] = return_addr
+
+                # Set PC to address of the function
+                self.PC = self.reg[op1]
+
+            elif ir == RET:
+                # Pop the return address off the stack
+                # Store it in the PC
+                self.PC = self.ram[self.reg[SP]]
+                self.reg[SP] += 1
 
             else:
                 print("Instruction ", ir, "not implemented. Halting.")
